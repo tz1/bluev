@@ -1,0 +1,103 @@
+Source code and electronic designs are licensed under: 
+The GNU General Public License Version 3
+
+This is a Valentine V1 ESP interface based on the ATtiny4313 running at 20Mhz
+
+NEW! Arduino Mega support, Sketch compatible.  See Arduino Mega section at the bottom
+
+(Note: The ATtiny2313 should also work as I'm not using more than half the RAM or Flash)
+
+(Note: I don't have a legacy V1 nor one that does NOT support
+checksums, so this is only tested for the latest version of the V1
+since I can only test what I have or have access to)
+
+The hard part about implementing ESP packet sends is that the UART
+needs to be switched in and out, and the bytes have to be paced
+according to specific timing, and there is a holdoff (don't send) bit.
+
+This device is designed to do that hard, subtle, fiddly timing stuff.
+Just send it a correct frame (from SOF to EOF with valid 3rd party
+device ID and checksum) and it does the rest.  It will not accept
+another command until the one is echoed (if it never is, and there is
+a time slice, it was invalid).
+
+Currently, only the checksum version of ESP is supported.  Upgrade your V1.
+
+Baud is 57600 as per spec.
+
+See Downloads for schematic or board info when available.
+
+The pins on the ATtiny4313 are (PDIP/SOIC)
+
+1 Reset (nc/ISP/dW)
+2 RXD PD0 - from Bluetooth Module or serial transmit
+3 TXD PD1 - THROUGH A 2.2K RESISTOR to pin 11 ICP1 and V1 Data Line  (and to bluetooth/serial receive via diode)
+4 XTAL1 - to 20Mhz resonator or crystal
+5 XTAL2 - to 20Mhz resonator or crystal
+6 INT0 PD2 nc
+7 INT1 PD3 nc
+8 PD4 nc
+9 PD5 nc
+10 GND - to ground
+
+20 VCC - to 5v
+19 PB7 nc SCK for ISP
+18 PB6 nc MISO for ISP
+17 PB5 nc MOSI for ISP
+16 PB4 nc
+15 PB3 nc
+14 PB2 nc
+13 PB1 nc
+12 PB0 nc
+11 ICP1 PD6 - to pin 3 TXD and V1 Data Line (and to bluetooth/serial receive via diode)
+
+The ICP1 is used to create a 57600 baud software UART input and to do
+timing to create proper framing and time slice.
+
+The data stream from all devices included echoed data from the
+interface will directly go out via serial (breaks may cause nulls in
+the data).  Typically to bluetooth.
+
+Data from the (bluetooth) serial interface will be stored and
+validated (it has to be a valid ESP message with origin IDs 3, 4, or
+5) and then sent out in the correct time slice for the originator ID.
+
+Using a TTL serial port on /dev/ttyUSB0:
+
+v1reShark is a stream dumper and decoder (in progress)
+
+v1send will send simple commands, mainly to set something, e.g. option 8 turns the display off, option 9 turns it on.
+
+I usually use "./v1reshark | uniq &", then do v1send to inquire or change things.
+
+I'm not doing legacy mode since it would require some switching, thus
+more hardware, and there isn't much advantage to just having the
+display status.  For legacy, any serial port (including bluetooth
+module) with just the pullup running at 19200 baud can decode the
+stream by seeing if the characters returned are greater or less than
+0xe0 (generally you get 0xc0 and 0xf8).  The new ATtiny1634 has two
+UARTs so it would make that much easier, but for now...
+
+(If I were to do something it would be an ESP emulator that would
+convert the legacy bitstream into the infDisplay packet as close as
+possible, and *maybe* emulate mute on and if possible modulate the
+pullup to allow the main display to turn on and off)
+
+Note there is a "#define ANYSLICE" that overrides the checking for 3rd
+party source id 3-5.  I can simulate a concealed display by sending
+0x61 packets which will turn off the main display.
+
+ARDUINO MEGA:
+
+bluevmega.c and Makefile.ArduMega.  Can be pasted into the IDE and
+uploaded to Arduino Mega boards.  Will scan the bus and return a lot
+of information, then enable alerts and print them like v1test.  See
+Mega.HOWTO.txt for more info.
+
+TODO:
+
+Move to crystal that is an exact multiple of the baud 18.34Mhz 10ppm?
+v1send - add option to ask for (factory reset?)
+v1send - write user bytes, sweep stuff???
+multimode? - multiple packets, one each in the 3, 4, 5 slice
+Yes, I know I don't have decoupling caps - but I don't need them on the breadboard, but will add them on the planned surface mount version.

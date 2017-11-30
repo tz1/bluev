@@ -1,0 +1,131 @@
+You will need a modular phone cable, some extra wire, an Arduino Mega,
+and the Arduino development environment you can get from
+http://arduino.cc and some basic tools.
+
+See http://harleyhacking.blogspot.com for a more detailed DIY build article.
+
+A modular jack inserted into the accessory port on a V1 power
+connection will have the following connections:
+
+(The lock tab is facing up)
+
+ +----------------------------+
+ |                            |
++---------------+             |================================ DATA
+|               |             |
+|               +-------------+---+============================ GROUND
+|                                 |
+|               +-------------+---+============================ POWER
+|               |             |
++---------------+             |================================ AUDIO
+ |                            |
+ +----------------------------+
+
+
+Since you will probably be cutting a pre-made cord, I would suggest
+you align the end with the colors (you can usually see through the
+plug) as green for ground and red for power, which would make data
+yellow and audio black.
+
+If you want a full passthrough, you can also get a dual line jack from
+Lowes or similar store.  It has to be for two full (4 wire) circuits,
+so have eight screw terminals inside.  Take the wires off one side and
+connect them in the opposite order on the other side, i.e. one will be
+black, red, green, yellow, attach yellow, green, red, and black from
+the far side respectively, and run wires out to the Mega, i.e.
+
+a+-d
+BRGY
+YGRB
+
+Here I would check with a meter to figure out which side is to the
+accessory power and which is to next accessory (I tend to think, which
+one goes toward the V1, which toward the Concealed Display - which
+also has one jack).  Data is going to be next to ground here too.
+
+You will need to connect ground - there is a power header near the
+power plug - you can buy a plug or go to the ground on the power
+header.  You can connect battery to VIN or PWR_IN or the plug - the
+power LED should turn on if you have this right.
+
+Note: If the Arduino is NOT powered, it will pull down the data line
+and disable the ESP function.
+
+The DATA line goes both to pin 49 on the edge opposite the power plug
+and to pin 18/TX1 near the adjacent corner.
+
+RX2 and TX2 are now the transparent ports if you want to connect a
+bluetooth module or something else.  Note that it will collide with
+data from the main port so you should not do anything with the USB
+serial port if you are using serial port 2.
+
+The PC Command port now just waits for a return, but eventually it
+will be a simple interface where you can use a terminal program to get
+information and reconfigure your V1.
+
+You will need the IDE from arduino.cc to compile and flash the
+program.  It is available for the PC, Mac, and Linux.
+
+Copy the bluev_sketch folder to the sketchbook folder for the Arduino.
+
+You can open it using the IDE directly or double-click on the
+bluev_sketch.ino file in the folder.
+
+The program can then be compiled and uploaded by pressing the "play"
+button.  Remember to set the COM port and the board type (it should
+work with any Mega compatible, but older boards use a 1280, newer ones
+use a 2560, so check which one you have.
+
+You can use the serial monitor and use the top box to send the command
+characters, but a terminal program might be easier.
+
+Open a terminal program on the same COM port as the Arduino IDE used,
+set to 57600 baud, and hit return.  It will show a menu with multiple
+commands.  Infoscan looks for V1, CD, RA, and Savvy and returns all
+the information available.  Alerts enables and shows alerts.
+DefaultSweep will reset sweeps.  SetSweep will allow you to write a
+user set of sweeps.  See the V1 docs for how to make it valid.
+
+Note: If the bus is in legacy mode, you will see a long line with
+letters representing the LEDs which are lit on the display which is
+the legacy data stream.  This stream is documented at
+valentineone.com.  It has been added to show the V1 is in legacy mode
+and cannot accept ESP.
+
+There is a "v1 busy message" which is
+currently disabled but would show up if this is happening.
+
+Sample Output:
+
+V1MegaTool
+V1 Version: V3.8930
+V1 SerialNo: [redacted]
+BattVolt: 13.15
+UserSet: (default) 12345_78AbCdEFGHJuU_L   
+UserSet: (changed) _____6_____________t____
+SweepSct:
++1/2 34774 - 36072
++2/2 33383 -:34770
+SweepMax: 5
+SweepDef: 0 Top:34106 Bot:33900
+SweepDef: 1 Top:34475 Bot:34180
+SweepDef: 2 Top:34652 Bot:34563
+SweepDef: 3 Top:35526 Bot:35467
+SweepDef: 4 Top:    0 Bot:    0
+SweepDef: 5 Top:    0 Bot:    0
+CD Version: C2.1300
+RA Version: R2.1300
+SV Version: S0.0099
+SV SerialNo: [redacted]
+SavvyStat: ThreshKPH:56 (unmu ena: throvrd):2
+SavvyVehSpd: 0 kph
+
+
+===
+ 1/ 1 35027   0 ^v 142 Av!
+===
+ 1/ 1 35027   0 ^v 145 Av!
+===
+ 1/ 1 35027   0 ^v 145 Av!
+
+Alerts, num of total, freq MHz, frontsig ^v rearsig A(=Ka U=Ku KAXLU), v(rear, ^-v), !=priority
